@@ -28,7 +28,9 @@ find_package(Boost REQUIRED COMPONENTS system thread timer)
 # see if catkin was invoked to build this
 if (CATKIN_DEVEL_PREFIX)
   message(STATUS "catkin ENABLED")
-  find_package(catkin REQUIRED)
+  find_package(catkin REQUIRED COMPONENTS
+    roscpp
+  )
   if (catkin_FOUND)
     catkin_package()
   else()
@@ -116,6 +118,10 @@ include_directories(
   /usr/local/include/OGRE/Paging
   )
 
+if (CATKIN_DEVEL_PREFIX)
+  include_directories(${catkin_INCLUDE_DIRS})
+endif()
+
 link_libraries(
   ${PROTOBUF_LIBRARY}
   ${GAZEBO_LIBRARIES}
@@ -143,7 +149,7 @@ set(scripts_dir "${CMAKE_CURRENT_SOURCE_DIR}/scripts")
 add_custom_command(OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/models/iris/iris.sdf
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
   COMMAND rm -f ${CMAKE_CURRENT_SOURCE_DIR}/models/iris/iris.sdf
-  COMMAND python ${scripts_dir}/xacro.py -o  ${rotors_description_dir}/urdf/iris_base.urdf  ${rotors_description_dir}/urdf/iris_base.xacro enable_mavlink_interface:=${enable_mavlink_interface} enable_ground_truth:=${enable_ground_truth} enable_logging:=${enable_logging} rotors_description_dir:=${rotors_description_dir} 
+  COMMAND python ${scripts_dir}/xacro.py -o  ${rotors_description_dir}/urdf/iris_base.urdf  ${rotors_description_dir}/urdf/iris_base.xacro enable_mavlink_interface:=${enable_mavlink_interface} enable_ground_truth:=${enable_ground_truth} enable_logging:=${enable_logging} rotors_description_dir:=${rotors_description_dir}
   COMMAND gz sdf -p  ${rotors_description_dir}/urdf/iris_base.urdf >> ${CMAKE_CURRENT_SOURCE_DIR}/models/iris/iris.sdf
   COMMAND rm -f ${rotors_description_dir}/urdf/iris_base.urdf
   )
@@ -178,6 +184,10 @@ add_library(rotors_gazebo_multirotor_base_plugin SHARED src/gazebo_multirotor_ba
 add_library(rotors_gazebo_imu_plugin SHARED src/gazebo_imu_plugin.cpp)
 add_library(gazebo_opticalFlow_plugin SHARED src/gazebo_opticalFlow_plugin.cpp)
 add_library(gazebo_lidar_plugin SHARED src/gazebo_lidar_plugin.cpp)
+if (CATKIN_DEVEL_PREFIX)
+  add_library(gazebo_omni_plugin SHARED src/gazebo_omni_plugin.cpp)
+  add_library(gazebo_rviz_ground_truth_plugin SHARED src/gazebo_rviz_ground_truth_plugin.cpp)
+endif()
 add_library(rotors_gazebo_mavlink_interface SHARED src/gazebo_mavlink_interface.cpp src/geo_mag_declination.cpp)
 
 set(plugins
@@ -189,6 +199,10 @@ set(plugins
   gazebo_lidar_plugin
   rotors_gazebo_mavlink_interface
   )
+
+if (CATKIN_DEVEL_PREFIX)
+  list(APPEND plugins gazebo_omni_plugin gazebo_rviz_ground_truth_plugin)
+endif()
 
 # Linux is not consistent with plugin availability, even on Gazebo 7
 #if("${GAZEBO_VERSION}" VERSION_LESS "7.0")
@@ -251,4 +265,3 @@ set(CPACK_SOURCE_PACKAGE_FILE_NAME "${PROJECT_NAME}-${GAZEBO_MAJOR_VERSION}-${PR
 
 include(CPack)
 # vim: set et fenc= ff=unix sts=0 sw=2 ts=2 :
-
