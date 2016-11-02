@@ -49,6 +49,8 @@ namespace gazebo
       ros::NodeHandle nh("~");
       marker_pub = nh.advertise<visualization_msgs::Marker>(model_name + "/pose", 1);
       path_pub = nh.advertise<nav_msgs::Path>(model_name + "/path", 1);
+      pose_pub = nh.advertise<geometry_msgs::Pose>(model_name + "/tf", 1);
+      pose_pub_counter = 0;
       //clear all poses in path
       path.poses.clear();
       sub_reset_pos = nh.subscribe("/omni_vio_vis/reset", 1, &RvizGroundTruth::resetCb, this);
@@ -192,6 +194,33 @@ namespace gazebo
       marker_pub.publish(x_marker);
       marker_pub.publish(y_marker);
       marker_pub.publish(z_marker);
+
+      //publish transform
+      if (pose_pub_counter % 10 == 0) {
+        tf::Matrix3x3 m_tf(q);
+        tf::Matrix3x3 m_offset_tf(q_offset_tf);
+        m *= m_offset_tf.transpose();
+        q_tf = q * q_offset_tf;
+        tf::Vector3 m_off_row0_ = m_offset_tf.getRow(0);
+        tf::Vector3 m_off_row1_ = m_offset_tf.getRow(1);
+        tf::Vector3 m_off_row2_ = m_offset_tf.getRow(2);
+
+        double x_new_ = x*m_off_row0_[0] + y*m_off_row0_[1] + z*m_off_row0_[2];
+        double y_new_ = x*m_off_row1_[0] + y*m_off_row1_[1] + z*m_off_row1_[2];
+        double z_new_ = x*m_off_row2_[0] + y*m_off_row2_[1] + z*m_off_row2_[2];
+
+        geometry_msgs::Pose pose_;
+        pose_.position.x = x_new_;
+        pose_.position.y = y_new_;
+        pose_.position.z = z_new_;
+        pose_.orientation.x = q_tf[0];
+        pose_.orientation.y = q_tf[1];
+        pose_.orientation.z = q_tf[2];
+        pose_.orientation.w = q_tf[3];
+        pose_pub.publish(pose_);
+        pose_pub_counter = 0;
+      }
+      pose_pub_counter++;
     }
 
     private: void resetCb(const std_msgs::Empty &msg)
@@ -203,6 +232,7 @@ namespace gazebo
       z_offset = pose_offset.pos.z; // z coordinate
       q_offset = tf::Quaternion(pose_offset.rot.x, pose_offset.rot.y,
                               pose_offset.rot.z, -pose_offset.rot.w);
+      q_offset_tf = q_offset;
       tf::Quaternion q_vio_offset(0, 0, 1, 0); //180 degrees about z-axis
       q_offset *= q_vio_offset;
       path.poses.clear();
@@ -216,10 +246,12 @@ namespace gazebo
       nav_msgs::Path path;
       ros::Publisher marker_pub;
       ros::Publisher path_pub;
+      ros::Publisher pose_pub;
       ros::Subscriber sub_reset_pos;
       bool calc_path;
       double x_offset, y_offset, z_offset;
-      tf::Quaternion q_offset;
+      tf::Quaternion q_offset, q_offset_tf, q_tf;
+      int pose_pub_counter;
   };
 
   // Register this plugin with the simulator
