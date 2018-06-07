@@ -1,19 +1,19 @@
 <sdf version='1.5'>
   <model name='iris_opt_flow'>
-    <plugin name="vision_plugin" filename="libgazebo_vision_plugin.so">
+    <!-- <plugin name="vision_plugin" filename="libgazebo_vision_plugin.so">
         <robotNamespace></robotNamespace>
-        <pubRate>30</pubRate>
-        <randomWalk>1.0</randomWalk>
-        <noiseDensity>5e-04</noiseDensity>
-        <corellationTime>60.0</corellationTime>
-    </plugin>
+        <pub_rate>30</pub_rate>
+        <random_walk>1.0</random_walk>
+        <noise_density>0.0005</noise_density>
+        <corellation_time>60.0</corellation_time>
+    </plugin> -->
 
     <include>
       <uri>model://iris</uri>
     </include>
 
     <!--px4flow camera-->
-    <include>
+    <!-- <include>
       <uri>model://px4flow</uri>
       <pose>0.05 0 -0.05 0 0 0</pose>
     </include>
@@ -28,10 +28,10 @@
           <lower>0</lower>
         </limit>
       </axis>
-    </joint>
+    </joint> -->
 
     <!--lidar-->
-    <include>
+    <!-- <include>
       <uri>model://sf10a</uri>
       <pose>0 0 -0.05 0 0 0</pose>
     </include>
@@ -39,6 +39,16 @@
     <joint name="sf10a_joint" type="fixed">
       <parent>iris::base_link</parent>
       <child>sf10a::link</child>
+    </joint> -->
+
+    <include>
+      <uri>model://camera</uri>
+      <pose>0.05 0 -0.05 0 1.57 0</pose>
+    </include>
+
+    <joint name="camera_joint" type="fixed">
+      <parent>iris::base_link</parent>
+      <child>camera::link</child>
     </joint>
 
   </model>
